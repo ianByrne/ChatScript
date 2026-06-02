@@ -32,8 +32,14 @@ serverFinishedBy is what time the answer must be delivered(1 second before the m
 #include "common.h"
 
 #ifndef WIN32
-#include <ifaddrs.h>
 #include <net/if.h>
+// getifaddrs()/freeifaddrs() only exist in the Android NDK from API 24 (struct ifaddrs is
+// declared earlier, the functions are not). This embed build is server-less (DISCARDCLIENT),
+// so GetPrimaryIP is dead code here; guard the include + call so any API level compiles/loads.
+#if !defined(ANDROID) || (defined(__ANDROID_API__) && __ANDROID_API__ >= 24)
+#include <ifaddrs.h>
+#define CS_HAVE_GETIFADDRS 1
+#endif
 #endif
 static int servertransfersize;
 bool echoServer = false;
@@ -70,6 +76,8 @@ void GetPrimaryIP(char* buffer)
 
 	closesocket(sock);
 	if (!server) WSACleanup();
+#elif !defined(CS_HAVE_GETIFADDRS)
+    // Android API < 24: no getifaddrs(). Server-less embed never calls this; fall through to localhost.
 #else
     struct ifaddrs *ifaddr, *ifa;
 
