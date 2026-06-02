@@ -770,6 +770,7 @@ static int EncodingValue(char* name, char* field, int value)
 }
 
 
+#ifndef DISCARDJSONOPEN
 CURL* curl;
 
 static int my_trace(CURL * handle, curl_infotype type, char* data, size_t size, void* userp)
@@ -974,6 +975,7 @@ static char* JSONUrlEncode(char* urlx, char* fixedUrl, CURL * curlptr)
 	start = encodeSegment(&fixed, at, start, curlptr);
 	return fixedUrl;
 }
+#endif // DISCARDJSONOPEN
 
 // Open a URL using the given arguments and return the JSON object's returned by querying the given URL as a set of ChatScript facts.
 char fieldName[1000];
@@ -982,6 +984,9 @@ char headerLine[1000];
 
 FunctionResult JSONOpenCode(char* buffer)
 {
+#ifdef DISCARDJSONOPEN
+	return FAILRULE_BIT;
+#else
 	int index = JSONArgs();
 	size_t len;
 	curlBufferBase = NULL;
@@ -1418,6 +1423,7 @@ FunctionResult JSONOpenCode(char* buffer)
 	if (curlBufferBase) ReleaseStack(curlBufferBase);
 
 	return result;
+#endif // DISCARDJSONOPEN
 }
 
 /**

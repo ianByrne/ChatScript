@@ -15,12 +15,14 @@ duk_context *ctx;
 #endif
 void ChangeSpecial(char* buffer);
 
+#ifndef DISCARDJAVASCRIPT
 // Duktape has no I/O by default
 // define function that can be called from JS that will log a string
 static duk_ret_t native_log(duk_context *ctx) {
   Log(USERLOG, "%s", duk_to_string(ctx, 0));
   return 0;  /* no return value (= undefined) */
 }
+#endif
 
 // there are 2 contexts:  a permanently resident one for the system and a transient one per volley.
 
