@@ -9,7 +9,7 @@ static MeCab::Tagger* tagger;
 // structure for japanese parsing.
 static jp_tokens_t jpt;
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(DISCARD_JAPANESE)
 #pragma comment(lib, "../BINARIES/libmecab.lib")
 #endif
 
