@@ -33,10 +33,12 @@ serverFinishedBy is what time the answer must be delivered(1 second before the m
 
 #ifndef WIN32
 #include <net/if.h>
-// getifaddrs()/freeifaddrs() only exist in the Android NDK from API 24 (struct ifaddrs is
-// declared earlier, the functions are not). This embed build is server-less (DISCARDCLIENT),
-// so GetPrimaryIP is dead code here; guard the include + call so any API level compiles/loads.
-#if !defined(ANDROID) || (defined(__ANDROID_API__) && __ANDROID_API__ >= 24)
+// Never use getifaddrs() on Android. It exists in the NDK from API 24, but on a sandboxed app its
+// interface-enumeration socket is blocked ("socket(AF_INET,SOCK_DGRAM) failed in ifaddrs: Operation
+// not permitted") and bionic's getifaddrs then SIGSEGVs inside InitSystem -> GetPrimaryIP. We're an
+// offline embed (DISCARDCLIENT) and never need the primary IP, so skip it and fall through to
+// localhost. (Earlier this was gated on API>=24 -- which is exactly when it crashes.)
+#if !defined(ANDROID)
 #include <ifaddrs.h>
 #define CS_HAVE_GETIFADDRS 1
 #endif
