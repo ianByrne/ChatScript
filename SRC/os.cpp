@@ -378,8 +378,13 @@ void signalHandler( int signalcode )
     myexit(word,1);
 }
 
-void setSignalHandlers () 
+void setSignalHandlers ()
 {
+	// Never install these on Android. The embedded .NET/Godot runtime uses SIGSEGV/SIGBUS/SIGFPE for
+	// NORMAL operation (hardware null-checks, GC safepoints). Hijacking them makes a routine managed
+	// trap hit CS's signalHandler -> "FATAL: Linux Signal code 11" -> abort, crashing right after
+	// InitSystem. Standalone-server crash diagnostics aren't relevant to the embed build.
+#ifndef ANDROID
 	char word[MAX_WORD_SIZE];
 	struct sigaction sa = {};
 	sa.sa_handler = &signalHandler;
@@ -421,6 +426,7 @@ void setSignalHandlers ()
         Log(BUGLOG, word);
         Log(SERVERLOG, word);
     }
+#endif
 }
 
 #endif
