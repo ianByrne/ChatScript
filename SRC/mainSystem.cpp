@@ -1365,12 +1365,15 @@ unsigned int InitSystem(int argcx, char* argvx[], char* unchangedPath, char* rea
 	*websocketmessage = 0;
 	*jmeter = 0;
 	*buildflags = 0;
+	CSInitCrumb("InitSystem:before GetPrimaryIP");
 	GetPrimaryIP(myip);
+	CSInitCrumb("InitSystem:after GetPrimaryIP");
 	strcpy(baseLanguage, "ENGLISH"); // if no language given
 	ClearGlobals();
 	SetDefaultLogsAndFolders();
 	memset(&userFileSystem, 0, sizeof(userFileSystem));
 	InitFileSystem(unchangedPath, readablePath, writeablePath);
+	CSInitCrumb("InitSystem:after InitFileSystem");
 	if (userfiles) memcpy((void*)&userFileSystem, userfiles, sizeof(userFileSystem));
 
 	// now memorize cs main directory
@@ -1380,14 +1383,18 @@ unsigned int InitSystem(int argcx, char* argvx[], char* unchangedPath, char* rea
 	argc = argcx;
 	argv = argvx;
 
+	CSInitCrumb("InitSystem:before ReadConfig");
 	ReadConfig();
 	if (configUrl != NULL) LoadconfigFromUrl(configUrl, configHeaders, headerCount);
 
+	CSInitCrumb("InitSystem:before HandlePermanentBuffers");
 	HandlePermanentBuffers(true);
+	CSInitCrumb("InitSystem:after HandlePermanentBuffers");
 
 	quitting = false;
 	echo = true;
 	ProcessArguments(argc, argv);
+	CSInitCrumb("InitSystem:after ProcessArguments");
 	MakeDirectory(tmpfolder);
 
 	sprintf(logFilename, (char*)"%s/log%u.txt", logsfolder, port); // DEFAULT LOG
@@ -1441,6 +1448,7 @@ unsigned int InitSystem(int argcx, char* argvx[], char* unchangedPath, char* rea
 		if (!strnicmp(argv[i], (char*)"build1=", 7)) build1Requested = true;
 	}
 
+	CSInitCrumb("InitSystem:before CreateSystem");
 	CreateSystem();
 
 	// Potentially use external databases for the filesystem
