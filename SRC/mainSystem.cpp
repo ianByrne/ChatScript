@@ -1309,6 +1309,10 @@ void OpenExternalDatabase()
 	}
 }
 
+#ifndef DISCARDSCRIPTCOMPILER
+// Only the build0=/build1= command-line compile path uses this (and its callers are already guarded
+// by #ifndef DISCARDSCRIPTCOMPILER). Upstream left the definition itself unguarded, so it references
+// the discarded ReadTopicFiles and fails to compile under DISCARDSCRIPTCOMPILER; guard the def too.
 static void CommandLineBuild(unsigned int buildid,int i)
 {
 	char c = (buildid == BUILD0) ? '0' : '1';
@@ -1326,6 +1330,7 @@ static void CommandLineBuild(unsigned int buildid,int i)
 	sprintf(msg, "build%c complete", c);
 	myexit(msg, result);
 }
+#endif
 
 unsigned int InitSystem(int argcx, char* argvx[], char* unchangedPath, char* readablePath, char* writeablePath, USERFILESYSTEM* userfiles, DEBUGAPI infn, DEBUGAPI outfn)
 { // this work mostly only happens on first startup, not on a restart
