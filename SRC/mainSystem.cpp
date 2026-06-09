@@ -512,8 +512,18 @@ static void PerformBoot()
 	currentBeforeLayer = LAYER_BOOT;
 }
 
+// TEMP Android-bringup diagnostic: overwrite a flushed breadcrumb file before each init step so a
+// native abort (which leaves no usable backtrace under the embedded .NET runtime) localizes to the
+// last step reached. Written relative to CWD (the writable data root). Remove once init is stable.
+static void CSInitCrumb(const char* step)
+{
+	FILE* f = fopen("LOGS/cs_init_crumb.txt", "w");
+	if (f) { fprintf(f, "%s", step); fflush(f); fclose(f); }
+}
+
 void CreateSystem()
 {
+	CSInitCrumb("CreateSystem:start");
 	timedeployed = ElapsedMilliseconds();
 	tableinput = NULL;
 	scriptOverrideAuthorization = false;	// always start safe
@@ -601,8 +611,10 @@ void CreateSystem()
 	originalUserInput = NULL;
 	currentInput = NULL;
 
-	LoadSystem(0,argc,argv);		
+	CSInitCrumb("CreateSystem:before LoadSystem");
+	LoadSystem(0,argc,argv);
 	// leaves current layer as BOOT (2)
+	CSInitCrumb("CreateSystem:after LoadSystem");
 
 	strcpy(dbparams, mssqlparams); // do regardless so can use dummy codes
 #ifndef DISCARDMONGO
@@ -615,10 +627,14 @@ void CreateSystem()
 	strcpy(dbparams, mysqlparams);
 #endif
 	trace = oldtrace; // allow boot tracing
+	CSInitCrumb("CreateSystem:PerformBoot");
 	PerformBoot();
+	CSInitCrumb("CreateSystem:InitSpellCheck");
 	InitSpellCheck(); // after boot vocabulary added
 
+	CSInitCrumb("CreateSystem:ShowMemoryUsage");
 	ShowMemoryUsage();
+	CSInitCrumb("CreateSystem:done");
 	
 #ifdef DISCARDSERVER 
 	(*printer)((char*)"    Server disabled.\r\n");
@@ -668,22 +684,37 @@ void CreateSystem()
 void LoadSystem(unsigned int limit,unsigned int argc, char** argv)
 {//   reset the basic system 
 	myBot = 0; // facts loaded here are universal
+	CSInitCrumb("LoadSystem:InitFacts");
 	InitFacts(); // malloc space
+	CSInitCrumb("LoadSystem:InitStackHeap");
 	InitStackHeap(); // malloc space
+	CSInitCrumb("LoadSystem:InitDictionary");
 	InitDictionary(); // malloc space
-	
+
+	CSInitCrumb("LoadSystem:LoadDictionary");
 	LoadDictionary(heapFree);
+	CSInitCrumb("LoadSystem:InitUserCache");
 	InitUserCache(); // malloc space
+	CSInitCrumb("LoadSystem:InitFunctionSystem");
 	InitFunctionSystem(); // modify dictionary entries
+	CSInitCrumb("LoadSystem:InitScriptSystem");
 	InitScriptSystem();
+	CSInitCrumb("LoadSystem:InitVariableSystem");
 	InitVariableSystem();
+	CSInitCrumb("LoadSystem:InitSystemVariables");
 	InitSystemVariables();
+	CSInitCrumb("LoadSystem:InitLogs");
 	InitLogs();
 
+	CSInitCrumb("LoadSystem:SetLanguage");
 	SetLanguage("universal");
+	CSInitCrumb("LoadSystem:InitUniversalTextUtilities");
 	InitUniversalTextUtilities(); // also part of basic system before a build
+	CSInitCrumb("LoadSystem:InitTextUtilitiesByLanguage");
 	WalkLanguages(InitTextUtilitiesByLanguage); // also part of basic system before a build
+	CSInitCrumb("LoadSystem:ReadLiveData");
 	WalkLanguages(ReadLiveData); // below layer 0
+	CSInitCrumb("LoadSystem:done");
 	if (multidict) SetLanguage("English"); // return to std base
 	printf("Languages: %s\r\n", language_list);
 
